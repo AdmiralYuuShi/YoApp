@@ -9,39 +9,58 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-import {Item, Form, Label, Input, Button} from 'native-base';
+import {Item, Form, Label, Input, Button, Icon} from 'native-base';
 import firebaseSDK from '../configs/firebase';
 import {withNavigation, ScrollView} from 'react-navigation';
+import firebase from 'firebase';
 
 class Login extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      name: 'Alice',
       email: '',
       password: '',
-      avatar: '',
+      emailReq: false,
+      notEmail: false,
+      passReq: false,
     };
   }
 
+  componentDidMount() {
+    const user = firebase.auth().currentUser;
+    if (user) {
+      this.props.navigation.navigate('Main');
+    }
+  }
+
   onPressLogin = async () => {
+    this.setState({emailReq: false});
+    this.setState({notEmail: false});
+    this.setState({passReq: false});
     const user = {
-      name: this.state.name,
       email: this.state.email,
       password: this.state.password,
-      avatar: this.state.avatar,
     };
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
-    firebaseSDK.login(user, this.loginSuccess, this.loginFailed);
+    if (this.state.email.length === 0) {
+      this.setState({emailReq: true});
+    } else {
+      if (!emailRegex.test(this.state.email)) {
+        this.setState({notEmail: true});
+      } else {
+        if (this.state.password.length < 3) {
+          this.setState({passReq: true});
+        } else {
+          firebaseSDK.login(user, this.loginSuccess, this.loginFailed);
+        }
+      }
+    }
   };
 
   loginSuccess = () => {
     console.log('login successful, navigate to chat.');
-    this.props.navigation.navigate('Chat', {
-      name: this.state.name,
-      email: this.state.email,
-      avatar: this.state.avatar,
-    });
+    this.props.navigation.navigate('Main');
   };
 
   loginFailed = () => {
@@ -81,12 +100,27 @@ class Login extends React.Component {
                       onChangeText={value => this.setState({email: value})}
                     />
                   </Item>
+                  {this.state.emailReq && (
+                    <Text style={{color: 'red', marginLeft: 20, fontSize: 12}}>
+                      Email is required!
+                    </Text>
+                  )}
+                  {this.state.notEmail && (
+                    <Text style={{color: 'red', marginLeft: 20, fontSize: 12}}>
+                      Email is not valid!
+                    </Text>
+                  )}
                   <Item>
                     <Input
-                      placeholder="password"
+                      placeholder="Password"
                       onChangeText={value => this.setState({password: value})}
                     />
                   </Item>
+                  {this.state.passReq && (
+                    <Text style={{color: 'red', marginLeft: 20, fontSize: 12}}>
+                      Password must have atleast 3 character!
+                    </Text>
+                  )}
                   <Button
                     block
                     style={{backgroundColor: '#fa163f', marginTop: 20}}

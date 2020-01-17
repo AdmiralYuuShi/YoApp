@@ -1,5 +1,11 @@
 import firebase from 'firebase';
 import uuid from 'uuid/v4';
+// import RNFetchBlob from 'react-native-fetch-blob';
+
+// const Blob = RNFetchBlob.polyfill.Blob;
+// const fs = RNFetchBlob.fs;
+// window.XMLHttpRequest = RNFetchBlob.polyfill.XMLHttpRequest;
+// window.Blob = Blob;
 
 class FirebaseSDK {
   constructor() {
@@ -25,19 +31,146 @@ class FirebaseSDK {
       .then(success_callback, failed_callback);
   };
 
+  logout = (success, failed) => {
+    firebase
+      .auth()
+      .signOut()
+      .then(function() {
+        success();
+      })
+      .catch(function(error) {
+        failed(error);
+      });
+  };
+
+  getUserDataLogedIn = async setData => {
+    const userLog = firebase.auth().currentUser;
+
+    firebase
+      .database()
+      .ref('/users/' + userLog.uid)
+      .once('value')
+      .then(function(snapshot) {
+        const userdata = {
+          name: (snapshot.val() && snapshot.val().name) || 'Not yet filled',
+          address:
+            (snapshot.val() && snapshot.val().address) || 'Not yet filled',
+          birthday:
+            (snapshot.val() && snapshot.val().birthday) || 'Not yet filled',
+          email: (snapshot.val() && snapshot.val().email) || 'Not yet filled',
+          gender: (snapshot.val() && snapshot.val().gender) || 'Not yet filled',
+          location:
+            (snapshot.val() && snapshot.val().location) || 'Not yet filled',
+          status: (snapshot.val() && snapshot.val().status) || 'Not yet filled',
+          avatar: (snapshot.val() && snapshot.val().avatar) || null,
+        };
+        setData(userdata);
+      });
+  };
+
+  addContact = async email => {
+    // Create a query against the collection
+    const userLog = firebase.auth().currentUser;
+    let contactUid;
+    let name;
+    firebase
+      .database()
+      .ref('/users/')
+      .orderByChild('email')
+      .equalTo(email)
+      .on('child_added', function(snapshot) {
+        contactUid = snapshot.key;
+        name = snapshot.val().name;
+      });
+    if (contactUid) {
+      firebase
+        .database()
+        .ref('users/' + userLog.uid + '/contacts/' + contactUid)
+        .set(
+          {
+            email: email,
+            name: name,
+          },
+          function(error) {
+            if (error) {
+              alert(error);
+            } else {
+              alert('Success added "' + name + '" to your contact list');
+            }
+          },
+        );
+    } else {
+      alert('Cant found that Email on YoApps');
+    }
+  };
+
+  getContactsList = async contactsList => {
+    const userLog = firebase.auth().currentUser;
+    firebase
+      .database()
+      .ref('/users/' + userLog.uid + '/contacts/')
+      .once('value', contacts => {
+        const records = [];
+        contacts.forEach(contact => {
+          const childData = contact.val();
+          records.push(childData);
+        });
+        contactsList(records);
+      });
+  };
+
+  deleteAccount = async success => {
+    const userLog = firebase.auth().currentUser;
+    await firebase
+      .database()
+      .ref('/users/' + userLog.uid)
+      .set(null)
+      .then(res => {
+        userLog
+          .delete()
+          .then(function() {
+            alert('Your account deleted');
+          })
+          .catch(function(error) {
+            console.log(error);
+            alert(error);
+          });
+      });
+  };
+
   createAccount = async (user, success_callback, failed_callback) => {
     firebase
       .auth()
       .createUserWithEmailAndPassword(user.email, user.password)
       .then(result => {
-        var userLog = firebase.auth().currentUser;
+        const userLog = firebase.auth().currentUser;
         if (userLog) {
           userLog
             .updateProfile({
               displayName: user.name,
             })
             .then(function() {
-              success_callback(user.name);
+              firebase
+                .database()
+                .ref('users/' + userLog.uid)
+                .set(
+                  {
+                    name: user.name,
+                    email: user.email,
+                    birthday: '',
+                    gender: '',
+                    address: '',
+                    location: '',
+                    status: '',
+                  },
+                  function(error) {
+                    if (error) {
+                      failed_callback(error.message);
+                    } else {
+                      success_callback(user.name);
+                    }
+                  },
+                );
             })
             .catch(function(error) {
               failed_callback(error.message);
@@ -53,44 +186,73 @@ class FirebaseSDK {
       });
   };
 
-  uploadImage = async uri => {
-    console.log('got image to upload. uri:' + uri);
-    try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const ref = firebase
-        .storage()
-        .ref('avatar')
-        .child(uuid());
-      const task = ref.put(blob);
+  setAvatar = async blob => {
+    var metadata = {
+      contentType: 'image/jpeg',
+    };
 
-      return new Promise((resolve, reject) => {
-        task.on('state_changed', () => {}, reject, () =>
-          resolve(task.snapshot.downloadURL),
-        );
-      });
-    } catch (err) {
-      console.log('uploadImage try/catch error: ' + err.message);
-    }
-  };
+    var storageRef = firebase.storage().ref('/users/');
+    // Upload file and metadata to the object 'images/mountains.jpg'
+    var uploadTask = storageRef.child('avatar/' + uuid()).put(blob, metadata);
 
-  updateAvatar = url => {
-    var userf = firebase.auth().currentUser;
-    if (userf != null) {
-      userf.updateProfile({avatar: url}).then(
-        function() {
-          console.log('Updated avatar successfully. url:' + url);
-          alert('Avatar image is saved successfully.');
-        },
-        function(error) {
-          console.warn('Error update avatar.');
-          alert('Error update avatar. Error:' + error.message);
-        },
-      );
-    } else {
-      console.log("can't update avatar, user is not login.");
-      alert('Unable to update avatar. You must login first.');
-    }
+    // Listen for state changes, errors, and completion of the upload.
+    uploadTask.on(
+      firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
+      function(snapshot) {
+        // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+        var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        console.log('Upload is ' + progress + '% done');
+        switch (snapshot.state) {
+          case firebase.storage.TaskState.PAUSED: // or 'paused'
+            console.log('Upload is paused');
+            break;
+          case firebase.storage.TaskState.RUNNING: // or 'running'
+            console.log('Upload is running');
+            break;
+        }
+      },
+      function(error) {
+        // A full list of error codes is available at
+        // https://firebase.google.com/docs/storage/web/handle-errors
+        switch (error.code) {
+          case 'storage/unauthorized':
+            // User doesn't have permission to access the object
+            console.log('unauth');
+            break;
+
+          case 'storage/canceled':
+            // User canceled the upload
+            console.log('cancel');
+            break;
+          case 'storage/unknown':
+            // Unknown error occurred, inspect error.serverResponse
+            console.log('unknow');
+            break;
+        }
+      },
+      function() {
+        // Upload completed successfully, now we can get the download URL
+        uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+          console.log('File available at', downloadURL);
+          const userLog = firebase.auth().currentUser;
+          firebase
+            .database()
+            .ref('users/' + userLog.uid)
+            .update(
+              {
+                avatar: downloadURL,
+              },
+              function(error) {
+                if (error) {
+                  alert(error);
+                } else {
+                  alert('Success update avatar');
+                }
+              },
+            );
+        });
+      },
+    );
   };
 }
 const firebaseSDK = new FirebaseSDK();

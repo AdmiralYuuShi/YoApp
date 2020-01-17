@@ -12,25 +12,52 @@ import {
   Body,
   Button,
   Title,
-  Picker,
   Fab,
 } from 'native-base';
+import {
+  Menu,
+  MenuOptions,
+  MenuOption,
+  MenuTrigger,
+} from 'react-native-popup-menu';
 import {Image, View} from 'react-native';
-// import Tab1 from './tabOne';
-// import Tab2 from './tabTwo';
-// import Tab3 from './tabThree';
-export default class Home extends Component {
+import {withNavigation} from 'react-navigation';
+
+import Chat from '../components/Chat';
+import ContactsList from '../components/ContactsList';
+import Board from '../components/Board';
+import Maps from '../components/Maps';
+import firebaseSDK from '../configs/firebase';
+
+class Main extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      name: 'Alice',
+      email: '',
+      password: '',
+      avatar: '',
       fab: false,
     };
   }
 
+  handleLogout = () => {
+    const success = _ => {
+      alert('Loged out . . .');
+      this.props.navigation.navigate('Login');
+    };
+    const failed = err => {
+      alert(err);
+    };
+    firebaseSDK.logout(success, failed);
+  };
+
   render() {
     return (
       <Container>
-        <Header style={{backgroundColor: '#fa163f'}}>
+        <Header
+          androidStatusBarColor="#fa163f"
+          style={{backgroundColor: '#fa163f'}}>
           <Left>
             <Button transparent>
               <Image
@@ -47,7 +74,26 @@ export default class Home extends Component {
               <Icon name="search" />
             </Button>
             <Button transparent>
-              <Icon name="more" />
+              <Menu>
+                <MenuTrigger>
+                  <Icon name="more-vertical" type="Feather" />
+                </MenuTrigger>
+                <MenuOptions>
+                  <MenuOption
+                    onSelect={() => this.props.navigation.navigate('MyProfile')}
+                    text="My Profile"
+                    style={{marginTop: 6}}
+                  />
+                  <MenuOption text="My Event" style={{marginVertical: 3}} />
+                  <MenuOption text="Notification" style={{marginVertical: 3}} />
+                  <MenuOption text="Setting" style={{marginBottom: 6}} />
+                  <MenuOption
+                    onSelect={this.handleLogout}
+                    text="Logout"
+                    style={{marginTop: 6}}
+                  />
+                </MenuOptions>
+              </Menu>
             </Button>
           </Right>
         </Header>
@@ -58,7 +104,15 @@ export default class Home extends Component {
                 <Text>Chat</Text>
               </TabHeading>
             }>
-            <Text>Tab Chat!</Text>
+            <Chat />
+          </Tab>
+          <Tab
+            heading={
+              <TabHeading style={{backgroundColor: '#fa163f'}}>
+                <Text>Contact</Text>
+              </TabHeading>
+            }>
+            <ContactsList />
           </Tab>
           <Tab
             heading={
@@ -66,7 +120,7 @@ export default class Home extends Component {
                 <Text>Board</Text>
               </TabHeading>
             }>
-            <Text>Tab 2</Text>
+            <Board />
           </Tab>
           <Tab
             heading={
@@ -74,33 +128,12 @@ export default class Home extends Component {
                 <Text>Event</Text>
               </TabHeading>
             }>
-            <Text>Tab 3</Text>
+            <Maps />
           </Tab>
         </Tabs>
-        <View style={{flex: 1}}>
-          <Fab
-            active={this.state.fab}
-            direction="up"
-            containerStyle={{}}
-            style={{backgroundColor: '#fa163f'}}
-            position="bottomRight"
-            onPress={() => this.setState({fab: !this.state.active})}>
-            <Image
-              style={{width: 40, height: 40}}
-              source={require('../public/images/logo/yoapp_logo_rounded.png')}
-            />
-            <Button style={{backgroundColor: '#34A34F'}}>
-              <Icon type="FontAwesome" name="user-circle-o" />
-            </Button>
-            <Button style={{backgroundColor: '#3B5998'}}>
-              <Icon type="FontAwesome5" name="bell" />
-            </Button>
-            <Button disabled style={{backgroundColor: '#DD5144'}}>
-              <Icon type="Entypo" name="chat" />
-            </Button>
-          </Fab>
-        </View>
       </Container>
     );
   }
 }
+
+export default withNavigation(Main);
