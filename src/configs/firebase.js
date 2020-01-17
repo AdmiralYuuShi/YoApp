@@ -52,6 +52,7 @@ class FirebaseSDK {
       .once('value')
       .then(function(snapshot) {
         const userdata = {
+          uid: userLog.uid,
           name: (snapshot.val() && snapshot.val().name) || 'Not yet filled',
           address:
             (snapshot.val() && snapshot.val().address) || 'Not yet filled',
@@ -71,37 +72,36 @@ class FirebaseSDK {
   addContact = async email => {
     // Create a query against the collection
     const userLog = firebase.auth().currentUser;
-    let contactUid;
-    let name;
     firebase
       .database()
       .ref('/users/')
       .orderByChild('email')
       .equalTo(email)
       .on('child_added', function(snapshot) {
-        contactUid = snapshot.key;
-        name = snapshot.val().name;
+        const contactUid = snapshot.key;
+        const name = snapshot.val().name;
+        if (contactUid) {
+          firebase
+            .database()
+            .ref('users/' + userLog.uid + '/contacts/' + contactUid)
+            .set(
+              {
+                email: email,
+                name: name,
+                uid: contactUid,
+              },
+              function(error) {
+                if (error) {
+                  alert(error);
+                } else {
+                  alert('Success added "' + name + '" to your contact list');
+                }
+              },
+            );
+        } else {
+          alert('Cant found that Email on YoApps');
+        }
       });
-    if (contactUid) {
-      firebase
-        .database()
-        .ref('users/' + userLog.uid + '/contacts/' + contactUid)
-        .set(
-          {
-            email: email,
-            name: name,
-          },
-          function(error) {
-            if (error) {
-              alert(error);
-            } else {
-              alert('Success added "' + name + '" to your contact list');
-            }
-          },
-        );
-    } else {
-      alert('Cant found that Email on YoApps');
-    }
   };
 
   getContactsList = async contactsList => {
@@ -111,6 +111,7 @@ class FirebaseSDK {
       .ref('/users/' + userLog.uid + '/contacts/')
       .once('value', contacts => {
         const records = [];
+        console.log(contacts);
         contacts.forEach(contact => {
           const childData = contact.val();
           records.push(childData);
@@ -254,6 +255,83 @@ class FirebaseSDK {
       },
     );
   };
+
+  send = messages => {
+    const uid = firebase.auth().currentUser.uid;
+    messages.forEach(item => {
+      const message = {
+        text: item.text,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        user: item.user,
+      };
+      const id = item.user.cuid;
+      let messageId = uid + '_' + id;
+      const searchMessage = id + '_' + uid;
+      firebase
+        .database()
+        .ref('/messages/' + searchMessage)
+        .orderByKey()
+        .equalTo(searchMessage)
+        .once('value', function(snapshot) {
+          if (snapshot.key) {
+            messageId = snapshot.key;
+          }
+        });
+      firebase
+        .database()
+        .ref('messages/' + messageId + '/')
+        .push(message);
+    });
+  };
+
+  parse = message => {
+    const {user, text, timestamp} = message.val();
+    const {key: _id} = message;
+    const createdAt = new Date(timestamp);
+
+    return {
+      _id,
+      createdAt,
+      text,
+      user,
+    };
+  };
+
+  get = (callback, id) => {
+    const uid = firebase.auth().currentUser.uid;
+    let messageId = uid + '_' + id;
+    const searchMessage = id + '_' + uid;
+    firebase
+      .database()
+      .ref('/messages/' + searchMessage)
+      .orderByKey()
+      .equalTo(searchMessage)
+      .once('value', function(snapshot) {
+        if (snapshot.key) {
+          messageId = snapshot.key;
+        }
+      });
+    console.log(searchMessage);
+    firebase
+      .database()
+      .ref('messages/' + messageId)
+      .on('child_added', snapshot => callback(this.parse(snapshot)));
+  };
+
+  off() {
+    firebase
+      .database()
+      .ref('messages/')
+      .off();
+  }
+
+  get uid() {
+    return (firebase.auth().currentUser || {}).uid;
+  }
+
+  get name() {
+    return firebase.auth().currentUser.displayName;
+  }
 }
 const firebaseSDK = new FirebaseSDK();
 export default firebaseSDK;

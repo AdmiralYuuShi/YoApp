@@ -13,7 +13,7 @@ import {
 } from 'native-base';
 import {Image, View, TextInput} from 'react-native';
 import {withNavigation} from 'react-navigation';
-import {ScrollView} from 'react-native-gesture-handler';
+import {ScrollView, TouchableOpacity} from 'react-native-gesture-handler';
 import Modal from 'react-native-modal';
 import firebaseSDK from '../configs/firebase';
 
@@ -37,6 +37,7 @@ class ContactsList extends Component {
 
   addContact = _ => {
     firebaseSDK.addContact(this.state.email);
+    firebaseSDK.getContactsList(this.setContactsList);
   };
 
   render() {
@@ -49,9 +50,18 @@ class ContactsList extends Component {
               <List>
                 {this.state.contacts.map(contact => {
                   return (
-                    <ListItem>
-                      <Text>{contact.name}</Text>
-                    </ListItem>
+                    <TouchableOpacity
+                      onPress={() =>
+                        this.props.navigation.navigate('Chat', {
+                          name: contact.name,
+                          email: contact.email,
+                          cuid: contact.uid,
+                        })
+                      }>
+                      <ListItem>
+                        <Text>{contact.name}</Text>
+                      </ListItem>
+                    </TouchableOpacity>
                   );
                 })}
               </List>
