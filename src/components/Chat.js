@@ -34,10 +34,6 @@ class Chat extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      name: 'Alice',
-      email: '',
-      password: '',
-      avatar: '',
       fab: false,
     };
   }

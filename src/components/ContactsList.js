@@ -28,16 +28,19 @@ class ContactsList extends Component {
   }
 
   componentDidMount() {
-    firebaseSDK.getContactsList(this.setContactsList);
+    this.getContactsList();
   }
+
+  getContactsList = () => {
+    firebaseSDK.getContactsList(this.setContactsList);
+  };
 
   setContactsList = contacts => {
     this.setState({contacts: contacts});
   };
 
-  addContact = _ => {
-    firebaseSDK.addContact(this.state.email);
-    firebaseSDK.getContactsList(this.setContactsList);
+  addContact = async _ => {
+    await firebaseSDK.addContact(this.state.email, this.getContactsList);
   };
 
   render() {

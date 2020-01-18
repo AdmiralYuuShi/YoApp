@@ -269,12 +269,11 @@ class FirebaseSDK {
       const searchMessage = id + '_' + uid;
       firebase
         .database()
-        .ref('/messages/' + searchMessage)
-        .orderByKey()
-        .equalTo(searchMessage)
-        .once('value', function(snapshot) {
-          if (snapshot.key) {
-            messageId = snapshot.key;
+        .ref('/messages/')
+        .child(searchMessage)
+        .once('value', snapshot => {
+          if (snapshot.val()) {
+            messageId = searchMessage;
           }
         });
       firebase
@@ -297,21 +296,19 @@ class FirebaseSDK {
     };
   };
 
-  get = (callback, id) => {
+  get = async (callback, id) => {
     const uid = firebase.auth().currentUser.uid;
     let messageId = uid + '_' + id;
     const searchMessage = id + '_' + uid;
     firebase
       .database()
-      .ref('/messages/' + searchMessage)
-      .orderByKey()
-      .equalTo(searchMessage)
-      .once('value', function(snapshot) {
-        if (snapshot.key) {
-          messageId = snapshot.key;
+      .ref('/messages/')
+      .child(searchMessage)
+      .once('value', snapshot => {
+        if (snapshot.val()) {
+          messageId = searchMessage;
         }
       });
-    console.log(searchMessage);
     firebase
       .database()
       .ref('messages/' + messageId)
