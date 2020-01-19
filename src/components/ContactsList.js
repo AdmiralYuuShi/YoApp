@@ -10,6 +10,7 @@ import {
   Card,
   CardItem,
   Body,
+  Icon,
 } from 'native-base';
 import {Image, View, TextInput} from 'react-native';
 import {withNavigation} from 'react-navigation';
@@ -31,20 +32,19 @@ class ContactsList extends Component {
     this.getContactsList();
   }
 
-  getContactsList = () => {
-    firebaseSDK.getContactsList(this.setContactsList);
-  };
-
   setContactsList = contacts => {
     this.setState({contacts: contacts});
   };
 
-  addContact = async _ => {
-    await firebaseSDK.addContact(this.state.email, this.getContactsList);
+  addContact = _ => {
+    firebaseSDK.addContact(this.state.email, this.getContactsList);
+  };
+
+  getContactsList = () => {
+    firebaseSDK.getContactsList(this.setContactsList);
   };
 
   render() {
-    console.log(this.state.contacts);
     return (
       <>
         <ScrollView>
@@ -57,8 +57,8 @@ class ContactsList extends Component {
                       onPress={() =>
                         this.props.navigation.navigate('Chat', {
                           name: contact.name,
-                          email: contact.email,
                           cuid: contact.uid,
+                          avatar: contact.avatar,
                         })
                       }>
                       <ListItem>
@@ -76,10 +76,7 @@ class ContactsList extends Component {
             position="bottomRight"
             style={{backgroundColor: '#fa163f'}}
             onPress={() => this.setState({modalVisible: true})}>
-            <Image
-              style={{width: 40, height: 40}}
-              source={require('../public/images/logo/yoapp_logo_rounded.png')}
-            />
+            <Icon type="FontAwesome5" name="user-plus" />
           </Fab>
         </View>
         <View style={{flex: 1}}>

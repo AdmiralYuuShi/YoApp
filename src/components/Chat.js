@@ -1,80 +1,123 @@
 import React, {Component} from 'react';
 import {
   Container,
-  Header,
-  Tab,
-  Tabs,
-  TabHeading,
-  Icon,
   Text,
   Left,
   Right,
   Body,
-  Button,
-  Title,
   Fab,
   Content,
   List,
   ListItem,
   Thumbnail,
+  Icon,
 } from 'native-base';
 import {
-  Menu,
-  MenuOptions,
-  MenuOption,
-  MenuTrigger,
-} from 'react-native-popup-menu';
-import {Image, View, TouchableOpacity} from 'react-native';
+  Image,
+  View,
+  TouchableOpacity,
+  RefreshControl,
+  ScrollView,
+} from 'react-native';
 import {withNavigation} from 'react-navigation';
-import {ScrollView} from 'react-native-gesture-handler';
-// import Tab1 from './tabOne';
-// import Tab2 from './tabTwo';
-// import Tab3 from './tabThree';
+import firebaseSDK from '../configs/firebase';
+import firebase from 'firebase';
+
 class Chat extends Component {
   constructor(props) {
     super(props);
     this.state = {
       fab: false,
+      history: [],
+      refreshing: false,
     };
   }
 
+  componentDidMount() {
+    firebaseSDK.getChatHistory(this.setHistory);
+  }
+
+  componentWillUnmount() {
+    this.setState({history: []});
+  }
+
+  setHistory = history => {
+    this.setState({history});
+  };
+
+  _onRefresh = () => {
+    this.setState({refreshing: true});
+    firebaseSDK.getChatHistory(this.setHistory);
+    this.setState({refreshing: false});
+  };
+
   render() {
+    console.log('Historiaaaaaa' + JSON.stringify(this.state.history));
     return (
       <>
-        <ScrollView>
+        <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={this.state.refreshing}
+              onRefresh={this._onRefresh}
+            />
+          }>
           <Container>
             <Content>
               <List>
-                <ListItem avatar>
-                  <Left>
-                    <Thumbnail
-                      source={require('../public/images/logo/yoapp_logo_rounded.png')}
-                    />
-                  </Left>
-                  <Body>
-                    <TouchableOpacity>
-                      <>
-                        <Text>Kumar Pratik</Text>
-                        <Text note>
-                          Doing what you like will always keep you happy . .
-                        </Text>
-                      </>
-                    </TouchableOpacity>
-                  </Body>
-                  <Right>
-                    <Text note>3:43 pm</Text>
-                  </Right>
-                </ListItem>
+                {this.state.history.map(data => {
+                  const timestamp = data.timestamp;
+                  const date = new Date(timestamp);
+                  const hours = date.getHours();
+                  const minutes = '0' + date.getMinutes();
+                  const formatedDate = hours + '.' + minutes.substr(-2);
+                  let name = data.user.cname;
+                  let id = data.user.cuid;
+                  let avatar = data.user.cavatar;
+                  if (data.user.cuid === firebase.auth().currentUser.uid) {
+                    name = data.user.name;
+                    id = data.user._id;
+                    avatar = data.user.avatar;
+                  }
+                  console.log(avatar);
+                  return (
+                    <ListItem avatar>
+                      <Left>
+                        <Thumbnail
+                          source={{uri: avatar}}
+                          style={{width: 50, height: 50}}
+                        />
+                      </Left>
+                      <Body>
+                        <TouchableOpacity
+                          onPress={() =>
+                            this.props.navigation.navigate('Chat', {
+                              name: name,
+                              cuid: id,
+                              avatar: avatar,
+                            })
+                          }>
+                          <>
+                            <Text>{name}</Text>
+                            <Text note numberOfLines={1}>
+                              {data.text}
+                            </Text>
+                          </>
+                        </TouchableOpacity>
+                      </Body>
+                      <Right>
+                        <Text note>{formatedDate}</Text>
+                      </Right>
+                    </ListItem>
+                  );
+                })}
               </List>
             </Content>
           </Container>
         </ScrollView>
         <View>
           <Fab position="bottomRight" style={{backgroundColor: '#fa163f'}}>
-            <Image
-              style={{width: 40, height: 40}}
-              source={require('../public/images/logo/yoapp_logo_rounded.png')}
-            />
+            <Icon type="Entypo" name="new-message" />
           </Fab>
         </View>
       </>

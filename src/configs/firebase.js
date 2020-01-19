@@ -69,7 +69,7 @@ class FirebaseSDK {
       });
   };
 
-  addContact = async email => {
+  addContact = async (email, success) => {
     // Create a query against the collection
     const userLog = firebase.auth().currentUser;
     firebase
@@ -80,6 +80,8 @@ class FirebaseSDK {
       .on('child_added', function(snapshot) {
         const contactUid = snapshot.key;
         const name = snapshot.val().name;
+        const avatar = snapshot.val().avatar;
+        console.log(avatar);
         if (contactUid) {
           firebase
             .database()
@@ -88,6 +90,7 @@ class FirebaseSDK {
               {
                 email: email,
                 name: name,
+                avatar: avatar,
                 uid: contactUid,
               },
               function(error) {
@@ -95,6 +98,7 @@ class FirebaseSDK {
                   alert(error);
                 } else {
                   alert('Success added "' + name + '" to your contact list');
+                  success();
                 }
               },
             );
@@ -163,6 +167,7 @@ class FirebaseSDK {
                     address: '',
                     location: '',
                     status: '',
+                    avatar: 'https://rosesoft.org/img/client/4.png',
                   },
                   function(error) {
                     if (error) {
@@ -247,7 +252,13 @@ class FirebaseSDK {
                 if (error) {
                   alert(error);
                 } else {
-                  alert('Success update avatar');
+                  userLog
+                    .updateProfile({
+                      photoURL: downloadURL,
+                    })
+                    .then(_ => {
+                      alert('Success update avatar');
+                    });
                 }
               },
             );
@@ -256,9 +267,35 @@ class FirebaseSDK {
     );
   };
 
-  send = messages => {
+  getChatHistory = history => {
     const uid = firebase.auth().currentUser.uid;
-    messages.forEach(item => {
+    firebase
+      .database()
+      .ref('/users/' + uid + '/historyMessages')
+      .once('value')
+      .then(result => {
+        const records = [];
+        result.forEach(res => {
+          const messageId = res.val().id;
+          firebase
+            .database()
+            .ref('/messages/' + messageId)
+            .limitToLast(1)
+            .once('value')
+            .then(res_ => {
+              res_.forEach(_res => {
+                records.push(_res.val());
+              });
+              console.log(records);
+              history(records);
+            });
+        });
+      });
+  };
+
+  send = async messages => {
+    const uid = firebase.auth().currentUser.uid;
+    await messages.forEach(item => {
       const message = {
         text: item.text,
         timestamp: firebase.database.ServerValue.TIMESTAMP,
@@ -279,7 +316,23 @@ class FirebaseSDK {
       firebase
         .database()
         .ref('messages/' + messageId + '/')
-        .push(message);
+        .push(message)
+        .then(_ => {
+          firebase
+            .database()
+            .ref('users/' + uid + '/historyMessages/' + messageId + '/')
+            .set({
+              id: messageId,
+            })
+            .then(__ => {
+              firebase
+                .database()
+                .ref('users/' + id + '/historyMessages/' + messageId + '/')
+                .set({
+                  id: messageId,
+                });
+            });
+        });
     });
   };
 
@@ -300,7 +353,7 @@ class FirebaseSDK {
     const uid = firebase.auth().currentUser.uid;
     let messageId = uid + '_' + id;
     const searchMessage = id + '_' + uid;
-    firebase
+    await firebase
       .database()
       .ref('/messages/')
       .child(searchMessage)
@@ -328,6 +381,10 @@ class FirebaseSDK {
 
   get name() {
     return firebase.auth().currentUser.displayName;
+  }
+
+  get avatar() {
+    return firebase.auth().currentUser.photoURL;
   }
 }
 const firebaseSDK = new FirebaseSDK();

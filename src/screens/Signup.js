@@ -14,20 +14,47 @@ import firebaseSDK from '../configs/firebase';
 
 class Signup extends React.Component {
   state = {
-    name: undefined,
-    email: undefined,
-    password: undefined,
+    name: '',
+    email: '',
+    password: '',
+    emailReq: false,
+    notEmail: false,
+    passReq: false,
+    nameReq: false,
   };
 
   onPressCreate = async () => {
+    this.setState({emailReq: false});
+    this.setState({notEmail: false});
+    this.setState({passReq: false});
     const user = {
       name: this.state.name,
       email: this.state.email,
       password: this.state.password,
       avatar: this.state.avatar,
     };
-
-    firebaseSDK.createAccount(user, this.signupSuccess, this.signupFailed);
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    if (this.state.name.length === 0) {
+      this.setState({nameReq: true});
+    } else {
+      if (!this.state.email.length && this.state.email.length === 0) {
+        this.setState({emailReq: true});
+      } else {
+        if (!emailRegex.test(this.state.email)) {
+          this.setState({notEmail: true});
+        } else {
+          if (this.state.password.length < 3) {
+            this.setState({passReq: true});
+          } else {
+            firebaseSDK.createAccount(
+              user,
+              this.signupSuccess,
+              this.signupFailed,
+            );
+          }
+        }
+      }
+    }
   };
 
   signupSuccess = name => {
@@ -73,18 +100,39 @@ class Signup extends React.Component {
                       onChangeText={value => this.setState({name: value})}
                     />
                   </Item>
+                  {this.state.nameReq && (
+                    <Text style={{color: 'red', marginLeft: 20, fontSize: 12}}>
+                      Name is required!
+                    </Text>
+                  )}
                   <Item>
                     <Input
                       placeholder="Email"
                       onChangeText={value => this.setState({email: value})}
                     />
                   </Item>
+                  {this.state.emailReq && (
+                    <Text style={{color: 'red', marginLeft: 20, fontSize: 12}}>
+                      Email is required!
+                    </Text>
+                  )}
+                  {this.state.notEmail && (
+                    <Text style={{color: 'red', marginLeft: 20, fontSize: 12}}>
+                      Email is not valid!
+                    </Text>
+                  )}
                   <Item>
                     <Input
                       placeholder="password"
+                      secureTextEntry={true}
                       onChangeText={value => this.setState({password: value})}
                     />
                   </Item>
+                  {this.state.passReq && (
+                    <Text style={{color: 'red', marginLeft: 20, fontSize: 12}}>
+                      Password must have atleast 3 character!
+                    </Text>
+                  )}
                   <Button
                     block
                     style={{backgroundColor: '#30A24B', marginTop: 20}}

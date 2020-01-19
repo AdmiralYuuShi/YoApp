@@ -113,6 +113,7 @@ class Login extends React.Component {
                   <Item>
                     <Input
                       placeholder="Password"
+                      secureTextEntry={true}
                       onChangeText={value => this.setState({password: value})}
                     />
                   </Item>
