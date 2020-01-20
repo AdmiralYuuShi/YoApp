@@ -13,6 +13,8 @@ import {
   Left,
   Right,
   Icon,
+  Card,
+  CardItem,
 } from 'native-base';
 import {
   Menu,
@@ -20,10 +22,11 @@ import {
   MenuOption,
   MenuTrigger,
 } from 'react-native-popup-menu';
-import {Image, View, ToastAndroid, Alert} from 'react-native';
+import {Image, View, ToastAndroid, Alert, TextInput} from 'react-native';
 import {withNavigation} from 'react-navigation';
 import firebaseSDK from '../configs/firebase';
 import ImagePicker from 'react-native-image-picker';
+import Modal from 'react-native-modal';
 import {TouchableOpacity} from 'react-native-gesture-handler';
 
 class MyProfile extends Component {
@@ -39,12 +42,26 @@ class MyProfile extends Component {
       status: '',
       photo: '',
       avatar: null,
+      addressModal: false,
+      birthdayModal: false,
+      genderModel: false,
     };
   }
 
   componentDidMount() {
     firebaseSDK.getUserDataLogedIn(this.setData);
   }
+
+  changeUserData = _ => {
+    firebaseSDK.changeUserData(
+      this.state.address,
+      this.state.birthday,
+      this.state.gender,
+    );
+    this.setState({addressModal: false});
+    this.setState({birthdayModal: false});
+    this.setState({genderModal: false});
+  };
 
   handleChoosePhoto = async () => {
     const options = {
@@ -128,86 +145,220 @@ class MyProfile extends Component {
 
   render() {
     return (
-      <Container>
-        <Header
-          androidStatusBarColor="#fa163f"
-          style={{backgroundColor: '#fa163f'}}>
-          <Left>
-            <Button transparent>
+      <>
+        <Container>
+          <Header
+            androidStatusBarColor="#fa163f"
+            style={{backgroundColor: '#fa163f'}}>
+            <Left>
+              <Button transparent>
+                <Image
+                  style={{width: 35, height: 35}}
+                  source={require('../public/images/logo/yoapp_logo_rounded.png')}
+                />
+              </Button>
+            </Left>
+            <Body>
+              <Title style={{fontWeight: 'bold'}}>My Profile</Title>
+            </Body>
+            <Right>
+              <Button transparent>
+                <Menu>
+                  <MenuTrigger>
+                    <Icon
+                      style={{paddingVertical: 10, paddingLeft: 10}}
+                      name="more-vertical"
+                      type="Feather"
+                    />
+                  </MenuTrigger>
+                  <MenuOptions>
+                    <MenuOption
+                      onSelect={this.handleDelete}
+                      text="Delete Account"
+                      style={{margin: 5}}
+                    />
+                  </MenuOptions>
+                </Menu>
+              </Button>
+            </Right>
+          </Header>
+          <View style={{flex: 1, alignItems: 'center', paddingVertical: 30}}>
+            <TouchableOpacity onPress={this.handleChoosePhoto}>
               <Image
-                style={{width: 35, height: 35}}
-                source={require('../public/images/logo/yoapp_logo_rounded.png')}
+                style={{
+                  width: 180,
+                  height: 180,
+                  borderRadius: 100,
+                  borderWidth: 5,
+                  borderColor: '#fff',
+                }}
+                source={
+                  this.state.avatar
+                    ? {
+                        uri: this.state.avatar,
+                      }
+                    : require('../public/images/logo/yoapp_logo.png')
+                }
               />
-            </Button>
-          </Left>
-          <Body>
-            <Title style={{fontWeight: 'bold'}}>My Profile</Title>
-          </Body>
-          <Right>
-            <Button transparent>
-              <Menu>
-                <MenuTrigger>
-                  <Icon
-                    style={{paddingVertical: 10, paddingLeft: 10}}
-                    name="more-vertical"
-                    type="Feather"
-                  />
-                </MenuTrigger>
-                <MenuOptions>
-                  <MenuOption
-                    onSelect={this.handleDelete}
-                    text="Delete Account"
-                    style={{margin: 5}}
-                  />
-                </MenuOptions>
-              </Menu>
-            </Button>
-          </Right>
-        </Header>
-        <View style={{flex: 1, alignItems: 'center', paddingVertical: 30}}>
-          <TouchableOpacity onPress={this.handleChoosePhoto}>
-            <Image
+            </TouchableOpacity>
+            <Text
               style={{
-                width: 180,
-                height: 180,
-                borderRadius: 100,
-                borderWidth: 5,
-                borderColor: '#fff',
-              }}
-              source={
-                this.state.avatar
-                  ? {
-                      uri: this.state.avatar,
-                    }
-                  : require('../public/images/logo/yoapp_logo.png')
-              }
-            />
-          </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: 25,
-              fontWeight: 'bold',
-              marginTop: 10,
-              color: '#fa163f',
-            }}>
-            {this.state.name}
-          </Text>
-          <Form style={{marginRight: 20, marginTop: 20}}>
-            <Item stackedLabel disabled>
-              <Label style={{marginLeft: 5}}>Address</Label>
-              <Input disabled value={this.state.address} />
-            </Item>
-            <Item stackedLabel disabled>
-              <Label style={{marginLeft: 5}}>Birthday</Label>
-              <Input disabled value={this.state.birthday} />
-            </Item>
-            <Item stackedLabel disabled>
-              <Label style={{marginLeft: 5}}>Gender</Label>
-              <Input disabled value={this.state.gender} />
-            </Item>
-          </Form>
+                fontSize: 25,
+                fontWeight: 'bold',
+                marginTop: 10,
+                color: '#fa163f',
+              }}>
+              {this.state.name}
+            </Text>
+            <Form style={{marginRight: 20, marginTop: 20}}>
+              <TouchableOpacity
+                onPress={() => this.setState({addressModal: true})}>
+                <Item stackedLabel disabled>
+                  <Label style={{marginLeft: 5}}>Address</Label>
+                  <Input disabled value={this.state.address} />
+                </Item>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => this.setState({birthdayModal: true})}>
+                <Item stackedLabel disabled>
+                  <Label style={{marginLeft: 5}}>Birthday</Label>
+                  <Input disabled value={this.state.birthday} />
+                </Item>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => this.setState({genderModal: true})}>
+                <Item stackedLabel disabled>
+                  <Label style={{marginLeft: 5}}>Gender</Label>
+                  <Input disabled value={this.state.gender} />
+                </Item>
+              </TouchableOpacity>
+            </Form>
+          </View>
+        </Container>
+        <View style={{flex: 1}}>
+          <Modal
+            testID={'modal'}
+            isVisible={this.state.addressModal}
+            onSwipeComplete={() => this.setState({addressModal: false})}
+            swipeDirection={['up', 'left', 'right', 'down']}
+            style={{justifyContent: 'flex-end', marginHorizontal: 10}}>
+            <Card>
+              <CardItem>
+                <Body style={{alignItems: 'center'}}>
+                  <Text style={{fontWeight: 'bold', margin: 10}}>
+                    Change Address
+                  </Text>
+                  <TextInput
+                    style={{
+                      height: 40,
+                      borderColor: 'gray',
+                      borderWidth: 1,
+                      borderRadius: 10,
+                      alignSelf: 'stretch',
+                      textAlign: 'center',
+                    }}
+                    placeholder="Type Address Here . . ."
+                    value={this.state.address}
+                    onChangeText={value => this.setState({address: value})}
+                  />
+                  <Button
+                    onPress={this.changeUserData}
+                    rounded
+                    style={{
+                      backgroundColor: '#fa163f',
+                      marginTop: 10,
+                      paddingHorizontal: 20,
+                    }}>
+                    <Text> Save </Text>
+                  </Button>
+                </Body>
+              </CardItem>
+            </Card>
+          </Modal>
         </View>
-      </Container>
+        <View style={{flex: 1}}>
+          <Modal
+            testID={'modal'}
+            isVisible={this.state.birthdayModal}
+            onSwipeComplete={() => this.setState({birthdayModal: false})}
+            swipeDirection={['up', 'left', 'right', 'down']}
+            style={{justifyContent: 'flex-end', marginHorizontal: 10}}>
+            <Card>
+              <CardItem>
+                <Body style={{alignItems: 'center'}}>
+                  <Text style={{fontWeight: 'bold', margin: 10}}>
+                    Change Birthday
+                  </Text>
+                  <TextInput
+                    style={{
+                      height: 40,
+                      borderColor: 'gray',
+                      borderWidth: 1,
+                      borderRadius: 10,
+                      alignSelf: 'stretch',
+                      textAlign: 'center',
+                    }}
+                    placeholder="YYYY-MM-DD"
+                    value={this.state.birthday}
+                    onChangeText={value => this.setState({birthday: value})}
+                  />
+                  <Button
+                    onPress={this.changeUserData}
+                    rounded
+                    style={{
+                      backgroundColor: '#fa163f',
+                      marginTop: 10,
+                      paddingHorizontal: 20,
+                    }}>
+                    <Text> Save </Text>
+                  </Button>
+                </Body>
+              </CardItem>
+            </Card>
+          </Modal>
+        </View>
+        <View style={{flex: 1}}>
+          <Modal
+            testID={'modal'}
+            isVisible={this.state.genderModal}
+            onSwipeComplete={() => this.setState({genderModal: false})}
+            swipeDirection={['up', 'left', 'right', 'down']}
+            style={{justifyContent: 'flex-end', marginHorizontal: 10}}>
+            <Card>
+              <CardItem>
+                <Body style={{alignItems: 'center'}}>
+                  <Text style={{fontWeight: 'bold', margin: 10}}>
+                    Change Gender
+                  </Text>
+                  <TextInput
+                    style={{
+                      height: 40,
+                      borderColor: 'gray',
+                      borderWidth: 1,
+                      borderRadius: 10,
+                      alignSelf: 'stretch',
+                      textAlign: 'center',
+                    }}
+                    placeholder="Gender"
+                    value={this.state.gender}
+                    onChangeText={value => this.setState({gender: value})}
+                  />
+                  <Button
+                    onPress={this.changeUserData}
+                    rounded
+                    style={{
+                      backgroundColor: '#fa163f',
+                      marginTop: 10,
+                      paddingHorizontal: 20,
+                    }}>
+                    <Text> Save </Text>
+                  </Button>
+                </Body>
+              </CardItem>
+            </Card>
+          </Modal>
+        </View>
+      </>
     );
   }
 }

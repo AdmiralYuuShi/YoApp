@@ -76,7 +76,7 @@ class ContactsList extends Component {
             position="bottomRight"
             style={{backgroundColor: '#fa163f'}}
             onPress={() => this.setState({modalVisible: true})}>
-            <Icon type="FontAwesome5" name="user-plus" />
+            <Icon type="FontAwesome5" name="plus" />
           </Fab>
         </View>
         <View style={{flex: 1}}>

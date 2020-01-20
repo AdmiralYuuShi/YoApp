@@ -43,9 +43,12 @@ class FirebaseSDK {
       });
   };
 
+  setUserLocation = () => {
+    
+  }
+
   getUserDataLogedIn = async setData => {
     const userLog = firebase.auth().currentUser;
-
     firebase
       .database()
       .ref('/users/' + userLog.uid)
@@ -67,6 +70,52 @@ class FirebaseSDK {
         };
         setData(userdata);
       });
+  };
+
+  getDetailContact = async (id, setData) => {
+    firebase
+      .database()
+      .ref('/users/' + id)
+      .once('value')
+      .then(function(snapshot) {
+        const userdata = {
+          uid: id,
+          name: (snapshot.val() && snapshot.val().name) || 'Not yet filled',
+          address:
+            (snapshot.val() && snapshot.val().address) || 'Not yet filled',
+          birthday:
+            (snapshot.val() && snapshot.val().birthday) || 'Not yet filled',
+          email: (snapshot.val() && snapshot.val().email) || 'Not yet filled',
+          gender: (snapshot.val() && snapshot.val().gender) || 'Not yet filled',
+          location:
+            (snapshot.val() && snapshot.val().location) || 'Not yet filled',
+          status: (snapshot.val() && snapshot.val().status) || 'Not yet filled',
+          avatar: (snapshot.val() && snapshot.val().avatar) || null,
+        };
+        setData(userdata);
+      });
+  };
+
+  changeUserData = async (address, birthday, gender) => {
+    const userLog = firebase.auth().currentUser;
+
+    firebase
+      .database()
+      .ref('users/' + userLog.uid)
+      .update(
+        {
+          address,
+          birthday,
+          gender,
+        },
+        function(error) {
+          if (error) {
+            alert(error);
+          } else {
+            alert('Success update profile');
+          }
+        },
+      );
   };
 
   addContact = async (email, success) => {
@@ -153,6 +202,7 @@ class FirebaseSDK {
           userLog
             .updateProfile({
               displayName: user.name,
+              photoURL: 'https://rosesoft.org/img/client/4.png',
             })
             .then(function() {
               firebase
@@ -208,6 +258,7 @@ class FirebaseSDK {
         // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
         var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         console.log('Upload is ' + progress + '% done');
+        alert('Uploading . . . \n ' + Math.floor(progress) + '%');
         switch (snapshot.state) {
           case firebase.storage.TaskState.PAUSED: // or 'paused'
             console.log('Upload is paused');

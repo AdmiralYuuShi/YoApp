@@ -59,6 +59,7 @@ class Login extends React.Component {
   };
 
   loginSuccess = () => {
+    firebaseSDK.setUserLocation();
     console.log('login successful, navigate to chat.');
     this.props.navigation.navigate('Main');
   };

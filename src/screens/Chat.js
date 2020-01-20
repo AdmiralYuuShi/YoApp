@@ -68,7 +68,16 @@ export default class Chat extends React.Component {
   renderSend(props) {
     return (
       <Send {...props}>
-        <View style={{paddingHorizontal: 20, borderTopRightRadius: 50, borderBottomRightRadius: 50, height: 45, marginBottom: -1, marginRight: -4, backgroundColor: '#fa163f'}}>
+        <View
+          style={{
+            paddingHorizontal: 20,
+            borderTopRightRadius: 50,
+            borderBottomRightRadius: 50,
+            height: 45,
+            marginBottom: -1,
+            marginRight: -4,
+            backgroundColor: '#fa163f',
+          }}>
           <Icon
             type="MaterialCommunityIcons"
             name="send"

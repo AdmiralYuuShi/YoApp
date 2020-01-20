@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {View, Text, StyleSheet} from 'react-native';
-import MapView, {PROVIDER_GOOGLE} from 'react-native-maps';
-import Geolocation from '@react-native-community/geolocation';
+import MapView, {PROVIDER_GOOGLE, Marker} from 'react-native-maps';
+import geolocation from '@react-native-community/geolocation';
 
 class Maps extends Component {
   state = {
@@ -9,7 +9,7 @@ class Maps extends Component {
     longitude: '106.8543346',
   };
   componentDidMount() {
-    Geolocation.getCurrentPosition(geo => {
+    geolocation.getCurrentPosition(geo => {
       console.log(geo);
       this.setState({
         latitude: geo.coords.latitude,
@@ -29,7 +29,7 @@ class Maps extends Component {
             latitudeDelta: 0.005,
             longitudeDelta: 0.005,
           }}>
-          <MapView.Marker
+          <Marker
             coordinate={{
               latitude: this.state.latitude,
               longitude: this.state.longitude,
