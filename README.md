@@ -1,5 +1,8 @@
 <h1 align="center">YoApp!</h1>
 <p align="center">
+    <img width="200" src="https://raw.githubusercontent.com/AdmiralYuuShi/YoApp/master/src/public/images/logo/yoapp_logo_rounded.png">
+</p>
+<p align="center">
   Built with <b>React Native</b> and integrated with <b>Firebase</b>.
 </p>
 
